@@ -1,60 +1,70 @@
 import { useQuery } from '@tanstack/react-query'
 import { ArrowLeft, CheckCircle2, ExternalLink, Info, TrendingUp } from 'lucide-react'
 import { Link, useSearchParams } from 'react-router-dom'
-import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
+import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { api } from '../lib/api'
-import { formatCad } from '../lib/money'
-import type { Comparison, OfferProjection, ProjectionYear } from '../lib/types'
+import { DEFAULT_USD_TO_CAD_RATE } from '../lib/currencySettings'
+import { formatMoney } from '../lib/money'
+import type { Comparison, CurrencyCode, OfferProjection, ProjectionPeriod } from '../lib/types'
 
 export function ComparePage() {
   const [params] = useSearchParams()
   const ids = params.get('ids')?.split(',').map(Number).filter(Boolean) ?? []
+  const displayCurrency = (params.get('currency') === 'USD' ? 'USD' : 'CAD') as CurrencyCode
+  const usdToCadRate = Number(params.get('rate') ?? DEFAULT_USD_TO_CAD_RATE)
   const comparisonQuery = useQuery({
-    queryKey: ['comparison', ...ids],
-    queryFn: () => api<{ comparison: Comparison }>('/api/v1/comparisons', { method: 'POST', body: JSON.stringify({ offer_ids: ids }) }),
+    queryKey: ['comparison', ...ids, displayCurrency, usdToCadRate],
+    queryFn: () => api<{ comparison: Comparison }>('/api/v1/comparisons', {
+      method: 'POST',
+      body: JSON.stringify({ offer_ids: ids, display_currency: displayCurrency, usd_to_cad_rate: usdToCadRate }),
+    }),
     enabled: ids.length === 2,
   })
 
   if (ids.length !== 2) return <div className="page-state">Choose exactly two offers to compare.</div>
-  if (comparisonQuery.isLoading) return <div className="page-state">Calculating taxes, costs, and four years of value…</div>
-  if (!comparisonQuery.data) return <div className="page-state">We could not build this comparison. <Link to="/">Choose offers again</Link>.</div>
+  if (comparisonQuery.isLoading) return <div className="page-state">Estimating taxes, costs, and savings…</div>
+  if (!comparisonQuery.data) return <div className="page-state">This comparison could not be calculated. <Link to="/">Check your offers and exchange rate</Link>.</div>
 
   const result = comparisonQuery.data.comparison
   const [left, right] = result.offers
   const winner = result.offers.find((item) => item.offer.id === result.winner_offer_id)!
-  const chartData = left.years.map((year, index) => ({
-    name: `Year ${year.year}`,
-    [left.offer.company]: Math.round(year.disposable_cash_cents / 100),
-    [right.offer.company]: Math.round(right.years[index].disposable_cash_cents / 100),
+  const weekly = result.comparison_basis === 'weekly_savings'
+  const chartData = result.offers.map((projection) => ({
+    name: projection.offer.company,
+    savings: Math.round((weekly ? projection.weekly_savings_cents : projection.totals.estimated_savings_cents) / 100),
   }))
 
   return (
     <div className="page-wrap compare-page">
-      <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to offers</Link>
-      <div className="compare-heading"><div><span className="eyebrow">Four-year decision view</span><h1>{left.offer.company} <i>or</i> {right.offer.company}?</h1><p>Same dollars, same timeline, every assumption visible.</p></div><div className="version-chip">Tax data {result.tax_data_version}</div></div>
+      <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to my offers</Link>
+      <div className="compare-heading"><div><span className="eyebrow">{weekly ? 'Internship comparison' : 'Four-year comparison'}</span><h1>{left.offer.company} <i>or</i> {right.offer.company}?</h1><p>Results normalized to {result.display_currency} at 1 USD = {result.usd_to_cad_rate} CAD.</p></div><div className="version-chip">Tax data {result.tax_data_version}</div></div>
 
-      <section className="winner-banner"><span className="winner-icon"><TrendingUp size={25} /></span><div><small>STRONGER DISPOSABLE-CASH OUTCOME</small><h2>{winner.offer.company} leads by {formatCad(result.four_year_disposable_difference_cents)}</h2><p>Across four years, after estimated payroll deductions and the location costs you entered.</p></div><CheckCircle2 size={28} className="winner-check" /></section>
+      <section className="winner-banner"><span className="winner-icon"><TrendingUp size={25} /></span><div><small>HIGHER ESTIMATED SAVINGS</small><h2>{winner.offer.company} leads by {formatMoney(result.savings_difference_cents, result.display_currency)}{weekly ? ' per week' : ' over four years'}</h2><p>{weekly ? 'Weekly savings is used so internships of different lengths stay comparable.' : 'After estimated deductions and all entered living costs.'}</p></div><CheckCircle2 size={28} className="winner-check" /></section>
 
-      <div className="comparison-cards">{[left, right].map((projection) => <ProjectionCard key={projection.offer.id} projection={projection} winner={projection.offer.id === result.winner_offer_id} />)}</div>
+      <div className="comparison-cards">{[left, right].map((projection) => <ProjectionCard key={projection.offer.id} projection={projection} winner={projection.offer.id === result.winner_offer_id} currency={result.display_currency} />)}</div>
 
       <section className="chart-panel">
-        <div className="panel-heading"><div><span className="eyebrow">Disposable cash</span><h2>What remains each year</h2></div><p>After estimated taxes, payroll deductions, rent, commute, and relocation.</p></div>
-        <div className="chart-wrap"><ResponsiveContainer width="100%" height={340}><BarChart data={chartData} barGap={8}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dfe3dc" /><XAxis dataKey="name" axisLine={false} tickLine={false} /><YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `$${Math.round(value / 1000)}k`} /><Tooltip formatter={(value) => formatCad(Number(value) * 100)} cursor={{ fill: '#f3f1e9' }} /><Legend /><Bar dataKey={left.offer.company} fill="#163f35" radius={[6, 6, 0, 0]} /><Bar dataKey={right.offer.company} fill="#d89b55" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div>
+        <div className="panel-heading"><div><span className="eyebrow">Estimated savings</span><h2>{weekly ? 'Savings per week' : 'Savings across four years'}</h2></div><p>After estimated income tax, payroll deductions, rent, commute, relocation, and other entered costs.</p></div>
+        <div className="chart-wrap"><ResponsiveContainer width="100%" height={320}><BarChart data={chartData}><CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#dfe3dc" /><XAxis dataKey="name" axisLine={false} tickLine={false} /><YAxis axisLine={false} tickLine={false} tickFormatter={(value) => `$${Math.round(value / 1000)}k`} /><Tooltip formatter={(value) => formatMoney(Number(value) * 100, result.display_currency)} cursor={{ fill: '#f3f1e9' }} /><Bar dataKey="savings" name={weekly ? 'Savings / week' : 'Four-year savings'} fill="#163f35" radius={[6, 6, 0, 0]} /></BarChart></ResponsiveContainer></div>
       </section>
 
       <section className="year-table-panel">
-        <div className="panel-heading"><div><span className="eyebrow">Line by line</span><h2>Year 1 breakdown</h2></div><p>Equity is valued in its vesting year; signing and relocation apply only in year one.</p></div>
+        <div className="panel-heading"><div><span className="eyebrow">Line by line</span><h2>{weekly ? 'Internship term breakdown' : 'Year 1 breakdown'}</h2></div><p>Each offer is calculated in its native currency, then converted for this view.</p></div>
         <div className="breakdown-table"><div className="table-row table-head"><span>Category</span><strong>{left.offer.company}</strong><strong>{right.offer.company}</strong></div>{([
-          ['Gross cash', 'gross_cash_cents'], ['Vesting equity', 'equity_cents'], ['Income tax', 'income_tax_cents'], ['CPP/QPP', 'cpp_qpp_cents'], ['EI/QPIP', 'ei_qpip_cents'], ['Rent + commute + relocation', 'location_costs_cents'], ['Disposable cash', 'disposable_cash_cents'], ['Total package', 'total_package_cents'],
-        ] as [string, keyof ProjectionYear][]).map(([label, key]) => <div className={`table-row ${label === 'Disposable cash' ? 'emphasis' : ''}`} key={key}><span>{label}</span><strong>{formatCad(left.years[0][key] as number)}</strong><strong>{formatCad(right.years[0][key] as number)}</strong></div>)}</div>
+          ['Gross cash', 'gross_cash_cents'], ['Vesting equity', 'equity_cents'], ['Federal income tax', 'federal_tax_cents'],
+          ['Regional income tax', 'regional_tax_cents'], ['Payroll deductions', 'payroll_deductions_cents'],
+          ['Rent + living + commute + relocation', 'location_costs_cents'], ['Estimated savings after entered costs', 'estimated_savings_cents'], ['Total package', 'total_package_cents'],
+        ] as [string, keyof ProjectionPeriod][]).map(([label, key]) => <div className={`table-row ${key === 'estimated_savings_cents' ? 'emphasis' : ''}`} key={key}><span>{label}</span><strong>{formatMoney(left.periods[0][key] as number, result.display_currency)}</strong><strong>{formatMoney(right.periods[0][key] as number, result.display_currency)}</strong></div>)}</div>
+        <div className="payroll-context"><span>{left.offer.country_code === 'CA' ? 'Canada payroll: CPP/QPP and EI/QPIP' : 'U.S. payroll: Social Security and Medicare'}</span><span>{right.offer.country_code === 'CA' ? 'Canada payroll: CPP/QPP and EI/QPIP' : 'U.S. payroll: Social Security and Medicare'}</span></div>
       </section>
 
-      <section className="method-note"><Info size={20} /><div><h3>Planning estimate, not a tax return</h3><p>{result.disclaimer} Standard/basic credits are assumed; edit an offer to override annual income tax.</p><div className="source-links">{result.source_urls.map((url, index) => <a key={url} href={url} target="_blank" rel="noreferrer">Official source {index + 1} <ExternalLink size={13} /></a>)}</div></div></section>
+      <section className="method-note"><Info size={20} /><div><h3>Planning estimate, not a tax return</h3><p>{result.disclaimer} Edit an offer to override income tax or payroll deductions.</p><p>FX rate saved for offline use; initial rate dated {result.exchange_rate_date}.</p><div className="source-links">{result.source_urls.map((url, index) => <a key={url} href={url} target="_blank" rel="noreferrer">Calculation source {index + 1} <ExternalLink size={13} /></a>)}</div></div></section>
     </div>
   )
 }
 
-function ProjectionCard({ projection, winner }: { projection: OfferProjection; winner: boolean }) {
-  const yearOne = projection.years[0]
-  return <article className={`projection-card ${winner ? 'winner' : ''}`}><div className="projection-top"><div><span>{projection.offer.city}, {projection.offer.jurisdiction}</span><h2>{projection.offer.company}</h2><p>{projection.offer.role} · {projection.offer.work_mode}</p></div>{winner && <span className="best-badge"><CheckCircle2 size={14} /> Best outcome</span>}</div><div className="projection-primary"><span>4-year disposable cash</span><strong>{formatCad(projection.totals.disposable_cash_cents)}</strong></div><div className="projection-metrics"><span><small>Year 1 disposable</small><strong>{formatCad(yearOne.disposable_cash_cents)}</strong></span><span><small>4-year package</small><strong>{formatCad(projection.totals.total_package_cents)}</strong></span><span><small>Year 1 deductions</small><strong>{formatCad(yearOne.income_tax_cents + yearOne.cpp_qpp_cents + yearOne.ei_qpip_cents)}</strong></span></div></article>
+function ProjectionCard({ projection, winner, currency }: { projection: OfferProjection; winner: boolean; currency: CurrencyCode }) {
+  const period = projection.periods[0]
+  const internship = projection.offer.employment_type === 'internship'
+  return <article className={`projection-card ${winner ? 'winner' : ''}`}><div className="projection-top"><div><span>{projection.offer.city}, {projection.offer.jurisdiction} · {projection.native_currency}</span><h2>{projection.offer.company}</h2><p>{projection.offer.role} · {projection.offer.work_mode}</p></div>{winner && <span className="best-badge"><CheckCircle2 size={14} /> Higher savings</span>}</div><div className="projection-primary"><span>{internship ? `Total ${projection.offer.term_weeks}-week savings` : 'Four-year estimated savings'}</span><strong>{formatMoney(projection.totals.estimated_savings_cents, currency)}</strong></div><div className="projection-metrics"><span><small>Savings / week</small><strong>{formatMoney(projection.weekly_savings_cents, currency)}</strong></span><span><small>{internship ? 'Term package' : 'Four-year package'}</small><strong>{formatMoney(projection.totals.total_package_cents, currency)}</strong></span><span><small>{internship ? 'Term deductions' : 'Year 1 deductions'}</small><strong>{formatMoney(period.income_tax_cents + period.payroll_deductions_cents, currency)}</strong></span></div></article>
 }

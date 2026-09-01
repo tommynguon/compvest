@@ -30,8 +30,8 @@ export function OfferEditorPage() {
 
   return (
     <div className="page-wrap editor-page">
-      <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to offers</Link>
-      <div className="page-heading"><span className="eyebrow">{offerId ? 'Edit offer' : 'New offer'}</span><h1>{offerId ? 'Tune the assumptions.' : 'Build the full picture.'}</h1><p>Start with the offer letter, then add the costs that change what reaches you.</p></div>
+      <Link to="/" className="back-link"><ArrowLeft size={16} /> Back to my offers</Link>
+      <div className="page-heading"><span className="eyebrow">{offerId ? 'Edit offer' : 'New offer'}</span><h1>{offerId ? 'Update the numbers' : 'Add an offer'}</h1><p>Enter the offer in its native currency, then add the costs you expect for that location.</p></div>
       {mutation.isError && <div className="banner-error">We could not save this offer. Check the highlighted values and try again.</div>}
       <OfferForm key={offerQuery.data?.offer.id ?? 'new'} offer={offerQuery.data?.offer} onSubmit={(values) => mutation.mutate(values)} pending={mutation.isPending} />
     </div>

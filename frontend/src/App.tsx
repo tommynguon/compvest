@@ -1,10 +1,7 @@
-import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { lazy, Suspense } from 'react'
 import { Navigate, Outlet, Route, Routes } from 'react-router-dom'
 import { AppLayout } from './components/AppLayout'
-import { api } from './lib/api'
-import type { User } from './lib/types'
-import { AuthPage } from './pages/AuthPage'
 import { DashboardPage } from './pages/DashboardPage'
 import './App.css'
 
@@ -15,25 +12,12 @@ const queryClient = new QueryClient({
   defaultOptions: { queries: { retry: false, staleTime: 30_000 } },
 })
 
-function ProtectedRoute() {
-  const { data, isLoading } = useQuery({
-    queryKey: ['me'],
-    queryFn: () => api<{ user: User }>('/api/v1/me'),
-  })
-
-  if (isLoading) return <div className="app-loader">Opening your workspace…</div>
-  if (!data?.user) return <Navigate to="/welcome" replace />
-
-  return <AppLayout user={data.user}><Outlet /></AppLayout>
-}
-
 export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Suspense fallback={<div className="app-loader">Preparing your workspace…</div>}>
+      <Suspense fallback={<div className="app-loader">Opening CompVest…</div>}>
         <Routes>
-          <Route path="/welcome" element={<AuthPage />} />
-          <Route element={<ProtectedRoute />}>
+          <Route element={<AppLayout><Outlet /></AppLayout>}>
             <Route path="/" element={<DashboardPage />} />
             <Route path="/offers/new" element={<OfferEditorPage />} />
             <Route path="/offers/:offerId/edit" element={<OfferEditorPage />} />

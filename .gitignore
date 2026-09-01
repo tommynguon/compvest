@@ -26,4 +26,6 @@ frontend/dist/
 frontend/coverage/
 frontend/playwright-report/
 frontend/test-results/
-
+# Local file-sync conflict copies
+* 2.rb
+* 2.tsx

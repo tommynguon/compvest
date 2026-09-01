@@ -1,7 +1,9 @@
-export const formatCad = (cents: number, compact = false) =>
+import type { CurrencyCode } from './types'
+
+export const formatMoney = (cents: number, currency: CurrencyCode, compact = false) =>
   new Intl.NumberFormat('en-CA', {
     style: 'currency',
-    currency: 'CAD',
+    currency,
     maximumFractionDigits: 0,
     notation: compact ? 'compact' : 'standard',
   }).format(cents / 100)
