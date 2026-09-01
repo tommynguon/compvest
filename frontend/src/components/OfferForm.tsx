@@ -6,7 +6,7 @@ import { z } from 'zod'
 import { centsToDollars } from '../lib/money'
 import type { CountryCode, Offer } from '../lib/types'
 
-export const REGIONS = {
+const REGIONS = {
   CA: [
     ['AB', 'Alberta'], ['BC', 'British Columbia'], ['MB', 'Manitoba'], ['NB', 'New Brunswick'],
     ['NL', 'Newfoundland and Labrador'], ['NS', 'Nova Scotia'], ['NT', 'Northwest Territories'],
@@ -79,9 +79,10 @@ function overrideDollars(offer: Offer | undefined, period: string, field: string
   return value === undefined ? undefined : centsToDollars(value)
 }
 
+/* oxlint-disable react/incompatible-library -- React Hook Form watch intentionally drives conditional fields. */
 export function OfferForm({ offer, onSubmit, pending }: { offer?: Offer; onSubmit: (values: OfferFormValues) => void; pending: boolean }) {
   const [advanced, setAdvanced] = useState(false)
-  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<OfferFormValues>({
+  const { register, handleSubmit, watch, getValues, setValue, formState: { errors } } = useForm<OfferFormValues>({
     resolver: zodResolver(schema), defaultValues: defaults(offer),
   })
   const country = watch('country_code') as CountryCode
@@ -92,8 +93,8 @@ export function OfferForm({ offer, onSubmit, pending }: { offer?: Offer; onSubmi
 
   useEffect(() => {
     const validCodes = REGIONS[country].map(([code]) => code as string)
-    if (!validCodes.includes(watch('jurisdiction'))) setValue('jurisdiction', country === 'US' ? 'CA' : 'ON')
-  }, [country, setValue, watch])
+    if (!validCodes.includes(getValues('jurisdiction'))) setValue('jurisdiction', country === 'US' ? 'CA' : 'ON')
+  }, [country, getValues, setValue])
 
   const overridePeriods = employment === 'internship' ? [1] : [1, 2, 3, 4]
 
@@ -159,6 +160,7 @@ export function OfferForm({ offer, onSubmit, pending }: { offer?: Offer; onSubmi
     </form>
   )
 }
+/* oxlint-enable react/incompatible-library */
 
 type RegisterFn = ReturnType<typeof useForm<OfferFormValues>>['register']
 function MoneyField({ label, name, register, options, hint, optional, step = '1' }: { label: string; name: keyof OfferFormValues; register: RegisterFn; options: { valueAsNumber: boolean }; hint?: string; optional?: boolean; step?: string }) {
