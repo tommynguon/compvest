@@ -15,13 +15,16 @@ class ApiFlowTest < ActionDispatch::IntegrationTest
     )
 
     post "/api/v1/comparisons", params: {
-      offer_ids: [ canadian_id, american_id ], display_currency: "USD", usd_to_cad_rate: "1.4"
+      offer_ids: [ canadian_id, american_id ], display_currency: "USD", usd_to_cad_rate: "1.4",
+      exchange_rate_date: "2026-08-31", exchange_rate_source: "bank_of_canada"
     }, as: :json
 
     assert_response :success
     comparison = response.parsed_body["comparison"]
     assert_equal "USD", comparison["display_currency"]
     assert_equal "1.4", comparison["usd_to_cad_rate"]
+    assert_equal "2026-08-31", comparison["exchange_rate_date"]
+    assert_equal "bank_of_canada", comparison["exchange_rate_source"]
     assert_equal 2, comparison["offers"].length
     assert_equal 4, comparison["offers"].first["periods"].length
     assert_equal "four_year_savings", comparison["comparison_basis"]
@@ -53,6 +56,30 @@ class ApiFlowTest < ActionDispatch::IntegrationTest
 
     assert_response :unprocessable_entity
     assert_equal "invalid exchange rate", response.parsed_body["error"]
+  end
+
+  test "returns the latest Bank of Canada exchange rate" do
+    result = {
+      base_currency: "USD", quote_currency: "CAD", usd_to_cad_rate: "1.3762",
+      observed_at: "2026-08-31", source_name: "Bank of Canada Valet API",
+      source_url: "https://www.bankofcanada.ca/valet/docs/"
+    }
+    fake_service = Class.new do
+      define_method(:latest) { result }
+    end
+    controller = Api::V1::Reference::ExchangeRatesController
+    original_service = controller.service_class
+    controller.service_class = fake_service
+
+    begin
+      get "/api/v1/reference/exchange_rate", as: :json
+    ensure
+      controller.service_class = original_service
+    end
+
+    assert_response :success
+    assert_equal "1.3762", response.parsed_body.dig("exchange_rate", "usd_to_cad_rate")
+    assert_equal "2026-08-31", response.parsed_body.dig("exchange_rate", "observed_at")
   end
 
   private

@@ -6,12 +6,16 @@ module Comparison
       visas, treaties, foreign-tax credits, health-plan premiums, and unusual residency rules are excluded.
     TEXT
 
-    def initialize(offers, display_currency: nil, usd_to_cad_rate: nil)
+    EXCHANGE_RATE_SOURCES = %w[bank_of_canada manual].freeze
+
+    def initialize(offers, display_currency: nil, usd_to_cad_rate: nil, exchange_rate_date: nil, exchange_rate_source: nil)
       @offers = offers
       @converter = Money::CurrencyConverter.new(
         display_currency: display_currency,
         usd_to_cad_rate: usd_to_cad_rate
       )
+      @exchange_rate_date = normalize_rate_date(exchange_rate_date)
+      @exchange_rate_source = EXCHANGE_RATE_SOURCES.include?(exchange_rate_source) ? exchange_rate_source : "manual"
     end
 
     def call
@@ -24,7 +28,9 @@ module Comparison
         tax_data_version: "#{Tax::Data2026::VERSION} / #{Tax::UsData2026::VERSION}",
         display_currency: @converter.display_currency,
         usd_to_cad_rate: @converter.usd_to_cad_rate.to_s("F"),
-        exchange_rate_date: Money::CurrencyConverter::RATE_DATE,
+        exchange_rate_date: @exchange_rate_date,
+        exchange_rate_source: @exchange_rate_source,
+        exchange_rate_source_url: @exchange_rate_source == "bank_of_canada" ? ExchangeRates::BankOfCanada::SOURCE_URL : nil,
         comparison_basis: comparison_basis,
         disclaimer: DISCLAIMER,
         source_urls: (Tax::Data2026::SOURCES + Tax::UsData2026::SOURCES).uniq,
@@ -35,6 +41,14 @@ module Comparison
     end
 
     private
+
+    def normalize_rate_date(value)
+      return Money::CurrencyConverter::RATE_DATE if value.blank?
+
+      Date.iso8601(value).iso8601
+    rescue Date::Error
+      raise ArgumentError, "invalid exchange rate date"
+    end
 
     def internship_comparison?(projections)
       projections.any? { |projection| projection.dig(:offer, "employment_type") == "internship" }

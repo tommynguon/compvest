@@ -12,6 +12,7 @@ Rails.application.routes.draw do
 
       namespace :reference do
         resources :jurisdictions, only: :index
+        resource :exchange_rate, only: :show
       end
     end
   end
