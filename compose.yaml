@@ -1,0 +1,18 @@
+services:
+  backend:
+    build: ./backend
+    environment:
+      RAILS_ENV: production
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:?Set SECRET_KEY_BASE before starting containers}
+    volumes:
+      - backend_storage:/rails/storage
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  backend_storage:
