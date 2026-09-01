@@ -11,7 +11,7 @@ test('opens directly to the local personal offer list', async ({ page }) => {
 
   await expect(page.getByRole('heading', { name: 'My offers' })).toBeVisible()
   await expect(page.getByText('Personal tool · stored locally')).toBeVisible()
-  await expect(page.getByRole('link', { name: 'Add an offer' })).toBeVisible()
+  await expect(page.getByRole('link', { name: 'Add an offer' }).first()).toBeVisible()
   await expect(page.getByText(/sign in|register/i)).toHaveCount(0)
 })
 
