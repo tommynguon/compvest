@@ -1,11 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { ArrowRight, BriefcaseBusiness, Building2, Check, MapPin, Pencil, Plus, Trash2 } from 'lucide-react'
+import { ArrowRight, BriefcaseBusiness, Building2, Check, MapPin, Pencil, Plus, RefreshCw, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { api } from '../lib/api'
-import { DEFAULT_RATE_DATE, useCurrencySettings } from '../lib/currencySettings'
+import { useCurrencySettings } from '../lib/currencySettings'
 import { formatMoney } from '../lib/money'
-import type { Offer } from '../lib/types'
+import type { ExchangeRate, Offer } from '../lib/types'
 
 export function DashboardPage() {
   const [selected, setSelected] = useState<number[]>([])
@@ -13,6 +13,15 @@ export function DashboardPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const offersQuery = useQuery({ queryKey: ['offers'], queryFn: () => api<{ offers: Offer[] }>('/api/v1/offers') })
+  const refreshRate = useMutation({
+    mutationFn: () => api<{ exchange_rate: ExchangeRate }>('/api/v1/reference/exchange_rate'),
+    onSuccess: ({ exchange_rate: rate }) => setSettings({
+      ...settings,
+      usdToCadRate: Number(rate.usd_to_cad_rate),
+      rateDate: rate.observed_at,
+      rateSource: 'bank_of_canada',
+    }),
+  })
   const deleteOffer = useMutation({
     mutationFn: (id: number) => api(`/api/v1/offers/${id}`, { method: 'DELETE' }),
     onSuccess: (_data, id) => {
@@ -31,6 +40,7 @@ export function DashboardPage() {
   const openComparison = () => {
     const query = new URLSearchParams({
       ids: selected.join(','), currency: settings.displayCurrency, rate: String(settings.usdToCadRate),
+      rateDate: settings.rateDate, rateSource: settings.rateSource,
     })
     navigate(`/compare?${query}`)
   }
@@ -78,7 +88,9 @@ export function DashboardPage() {
       {offers.length > 0 && <div className={`compare-dock ${selected.length === 2 ? 'ready' : ''}`}>
         <div className="fx-settings">
           <label>Show results in<select value={settings.displayCurrency} onChange={(event) => setSettings({ ...settings, displayCurrency: event.target.value as 'CAD' | 'USD' })}><option value="CAD">CAD</option><option value="USD">USD</option></select></label>
-          <label>1 USD =<span className="rate-input"><input aria-label="USD to CAD exchange rate" type="number" min="0.1" max="10" step="0.0001" value={settings.usdToCadRate} onChange={(event) => setSettings({ ...settings, usdToCadRate: Number(event.target.value) })} /> CAD</span><small>Initial Bank of Canada rate · {DEFAULT_RATE_DATE}</small></label>
+          <label>1 USD =<span className="rate-input"><input aria-label="USD to CAD exchange rate" type="number" min="0.1" max="10" step="0.0001" value={settings.usdToCadRate} onChange={(event) => setSettings({ ...settings, usdToCadRate: Number(event.target.value), rateDate: new Date().toISOString().slice(0, 10), rateSource: 'manual' })} /> CAD</span><small>{settings.rateSource === 'bank_of_canada' ? `Bank of Canada · ${settings.rateDate}` : 'Manual override · saved locally'}</small></label>
+          <button className="fx-refresh" type="button" onClick={() => refreshRate.mutate()} disabled={refreshRate.isPending}><RefreshCw size={13} className={refreshRate.isPending ? 'spinning' : ''} />{refreshRate.isPending ? 'Updating' : 'Use latest'}</button>
+          {refreshRate.isError && <span className="fx-error" role="alert">Could not update. Your saved rate is still active.</span>}
         </div>
         <div className="compare-action"><div><span>{selected.length === 2 ? 'Ready to compare' : 'Choose two offers'}</span><strong>{selected.length === 2 ? selected.map((id) => offers.find((offer) => offer.id === id)?.company).join(' vs. ') : `${2 - selected.length} remaining`}</strong></div><button className="primary-button" disabled={selected.length !== 2 || settings.usdToCadRate < 0.1 || settings.usdToCadRate > 10} onClick={openComparison}>Compare savings <ArrowRight size={17} /></button></div>
       </div>}

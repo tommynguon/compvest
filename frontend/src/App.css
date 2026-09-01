@@ -114,6 +114,7 @@ h1, h2, h3, p { margin-top: 0; }
 .compare-dock strong { display: block; margin-top: 3px; font-size: 14px; }
 .compare-dock .primary-button { color: var(--ink); border-color: var(--green-bright); background: var(--green-bright); }
 .fx-settings, .compare-action { display: flex; align-items: center; gap: 16px; }
+.fx-settings { flex-wrap: wrap; }
 .compare-action { margin-left: auto; }
 .fx-settings label { display: grid; gap: 4px; color: #c7d5d1; font-size: 9px; font-weight: 750; letter-spacing: .7px; text-transform: uppercase; }
 .fx-settings select, .fx-settings input { height: 32px; border: 1px solid rgba(255,255,255,.22); border-radius: 8px; color: white; background: rgba(255,255,255,.08); font: inherit; }
@@ -121,6 +122,12 @@ h1, h2, h3, p { margin-top: 0; }
 .fx-settings input { width: 86px; padding: 0 8px; }
 .fx-settings small { color: #98afa8; font-size: 8px; font-weight: 600; letter-spacing: 0; text-transform: none; }
 .rate-input { display: flex !important; align-items: center; gap: 5px; color: #c7d5d1 !important; font-size: 10px !important; letter-spacing: 0 !important; text-transform: none !important; }
+.fx-refresh { display: inline-flex; align-items: center; gap: 6px; min-height: 32px; padding: 0 10px; border: 1px solid rgba(255,255,255,.22); border-radius: 8px; color: white; background: rgba(255,255,255,.08); font-size: 10px; font-weight: 750; white-space: nowrap; }
+.fx-refresh:hover:not(:disabled) { background: rgba(255,255,255,.15); }
+.fx-refresh:disabled { opacity: .6; }
+.fx-error { max-width: 130px; color: #ffd0c9 !important; font-size: 9px !important; font-weight: 650 !important; letter-spacing: 0 !important; line-height: 1.3; text-transform: none !important; }
+.spinning { animation: spin .8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
 
 /* Offer form */
 .editor-page { width: min(1000px, 90vw); }

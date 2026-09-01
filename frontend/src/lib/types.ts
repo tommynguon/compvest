@@ -1,5 +1,6 @@
 export type CountryCode = 'CA' | 'US'
 export type CurrencyCode = 'CAD' | 'USD'
+export type ExchangeRateSource = 'bank_of_canada' | 'manual'
 export type EmploymentType = 'full_time' | 'internship'
 export type PayBasis = 'annual' | 'hourly'
 
@@ -77,10 +78,21 @@ export type Comparison = {
   display_currency: CurrencyCode
   usd_to_cad_rate: string
   exchange_rate_date: string
+  exchange_rate_source: ExchangeRateSource
+  exchange_rate_source_url: string | null
   comparison_basis: 'weekly_savings' | 'four_year_savings'
   disclaimer: string
   source_urls: string[]
   offers: OfferProjection[]
   winner_offer_id: number
   savings_difference_cents: number
+}
+
+export type ExchangeRate = {
+  base_currency: 'USD'
+  quote_currency: 'CAD'
+  usd_to_cad_rate: string
+  observed_at: string
+  source_name: string
+  source_url: string
 }

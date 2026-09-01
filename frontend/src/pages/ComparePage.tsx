@@ -12,11 +12,19 @@ export function ComparePage() {
   const ids = params.get('ids')?.split(',').map(Number).filter(Boolean) ?? []
   const displayCurrency = (params.get('currency') === 'USD' ? 'USD' : 'CAD') as CurrencyCode
   const usdToCadRate = Number(params.get('rate') ?? DEFAULT_USD_TO_CAD_RATE)
+  const exchangeRateDate = params.get('rateDate')
+  const exchangeRateSource = params.get('rateSource') === 'bank_of_canada' ? 'bank_of_canada' : 'manual'
   const comparisonQuery = useQuery({
-    queryKey: ['comparison', ...ids, displayCurrency, usdToCadRate],
+    queryKey: ['comparison', ...ids, displayCurrency, usdToCadRate, exchangeRateDate, exchangeRateSource],
     queryFn: () => api<{ comparison: Comparison }>('/api/v1/comparisons', {
       method: 'POST',
-      body: JSON.stringify({ offer_ids: ids, display_currency: displayCurrency, usd_to_cad_rate: usdToCadRate }),
+      body: JSON.stringify({
+        offer_ids: ids,
+        display_currency: displayCurrency,
+        usd_to_cad_rate: usdToCadRate,
+        exchange_rate_date: exchangeRateDate,
+        exchange_rate_source: exchangeRateSource,
+      }),
     }),
     enabled: ids.length === 2,
   })
@@ -58,7 +66,7 @@ export function ComparePage() {
         <div className="payroll-context"><span>{left.offer.country_code === 'CA' ? 'Canada payroll: CPP/QPP and EI/QPIP' : 'U.S. payroll: Social Security and Medicare'}</span><span>{right.offer.country_code === 'CA' ? 'Canada payroll: CPP/QPP and EI/QPIP' : 'U.S. payroll: Social Security and Medicare'}</span></div>
       </section>
 
-      <section className="method-note"><Info size={20} /><div><h3>Planning estimate, not a tax return</h3><p>{result.disclaimer} Edit an offer to override income tax or payroll deductions.</p><p>FX rate saved for offline use; initial rate dated {result.exchange_rate_date}.</p><div className="source-links">{result.source_urls.map((url, index) => <a key={url} href={url} target="_blank" rel="noreferrer">Calculation source {index + 1} <ExternalLink size={13} /></a>)}</div></div></section>
+      <section className="method-note"><Info size={20} /><div><h3>Planning estimate, not a tax return</h3><p>{result.disclaimer} Edit an offer to override income tax or payroll deductions.</p><p>FX rate saved for offline use · {result.exchange_rate_source === 'bank_of_canada' ? 'Bank of Canada daily rate' : 'Manual override'} dated {result.exchange_rate_date}.</p><div className="source-links">{result.exchange_rate_source_url && <a href={result.exchange_rate_source_url} target="_blank" rel="noreferrer">Exchange-rate source <ExternalLink size={13} /></a>}{result.source_urls.map((url, index) => <a key={url} href={url} target="_blank" rel="noreferrer">Calculation source {index + 1} <ExternalLink size={13} /></a>)}</div></div></section>
     </div>
   )
 }

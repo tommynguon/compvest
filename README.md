@@ -9,6 +9,7 @@ CompVest is designed for one person on a local computer. It has no accounts, sig
 - React 19, TypeScript, and Vite
 - Ruby 3.3 and Rails 8 JSON API
 - SQLite for local offer storage
+- Bank of Canada Valet API for daily USD/CAD reference rates
 - TanStack Query, React Hook Form, Zod, Recharts, Vitest, and Playwright
 - Rails service objects, Minitest, RuboCop, and Brakeman
 
@@ -39,10 +40,11 @@ cd backend
 - Internships with hourly or annualized pay, hours per week, and exact term length
 - Salary, bonuses, equity, benefits, rent, other living costs, commute, and relocation
 - Total internship savings and savings per week, including unequal term lengths
-- Editable CAD/USD display currency and offline exchange rate saved in browser storage
+- Latest daily Bank of Canada USD/CAD rate with a dated source label and 24-hour server cache
+- Editable manual exchange-rate override saved in browser storage for offline use
 - Manual income-tax and payroll-deduction overrides
 
-The initial offline rate is `1 USD = 1.3888 CAD`, dated 2026-08-28 from the Bank of Canada. Offer inputs remain in native currency; results are rounded to cents with `BigDecimal` before comparison.
+The initial offline rate is `1 USD = 1.3888 CAD`, dated 2026-08-28 from the Bank of Canada. Use **Use latest** to load the newest daily observation. If the request fails, CompVest leaves the saved rate active; editing the rate switches the comparison to a clearly labelled manual override. Offer inputs remain in native currency, and results are rounded to cents with `BigDecimal` before comparison.
 
 ## API
 
@@ -51,6 +53,7 @@ The Rails JSON API is under `/api/v1`:
 - CRUD `/offers`
 - `POST /comparisons` with exactly two offer IDs, `display_currency`, and `usd_to_cad_rate`
 - `GET /reference/jurisdictions` for country, currency, and region metadata
+- `GET /reference/exchange_rate` for the cached latest Bank of Canada `FXUSDCAD` observation
 
 There are no account or session endpoints. Money is stored as integer cents in the local SQLite database.
 
