@@ -31,4 +31,30 @@ class TaxCalculatorTest < ActiveSupport::TestCase
     assert_predicate payroll[:qpip_cents], :positive?
     assert_operator taxes[:federal_tax_cents], :<, taxes[:provincial_tax_cents]
   end
+
+  test "calculates federal, FICA, and progressive California taxes" do
+    taxes = Tax::UsCalculator.new(income_cents: 12_000_000, jurisdiction: "CA").call
+
+    assert_predicate taxes[:federal_tax_cents], :positive?
+    assert_predicate taxes[:regional_tax_cents], :positive?
+    assert_equal 744_000, taxes[:social_security_cents]
+    assert_equal 174_000, taxes[:medicare_cents]
+  end
+
+  test "supports flat-tax and no-wage-tax states plus DC" do
+    colorado = Tax::UsCalculator.new(income_cents: 10_000_000, jurisdiction: "CO").call
+    washington = Tax::UsCalculator.new(income_cents: 10_000_000, jurisdiction: "WA").call
+    district = Tax::UsCalculator.new(income_cents: 10_000_000, jurisdiction: "DC").call
+
+    assert_predicate colorado[:regional_tax_cents], :positive?
+    assert_equal 0, washington[:regional_tax_cents]
+    assert_operator district[:regional_tax_cents], :>, colorado[:regional_tax_cents]
+  end
+
+  test "caps Social Security wages and applies additional Medicare" do
+    taxes = Tax::UsCalculator.new(income_cents: 30_000_000, jurisdiction: "TX").call
+
+    assert_equal 1_143_900, taxes[:social_security_cents]
+    assert_equal 525_000, taxes[:medicare_cents]
+  end
 end
