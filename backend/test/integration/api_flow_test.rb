@@ -1,51 +1,70 @@
 require "test_helper"
 
 class ApiFlowTest < ActionDispatch::IntegrationTest
-  test "registers, saves two offers, compares them, and signs out" do
-    post "/api/v1/register", params: {
-      user: { name: "API User", email: "api@example.com", password: "password123" }
-    }, as: :json
-    assert_response :created
-    assert_equal "api@example.com", response.parsed_body.dig("user", "email")
-
-    first_id = create_offer(company: "First Co", jurisdiction: "ON", salary_cents: 10_000_000)
-    second_id = create_offer(company: "Second Co", jurisdiction: "AB", salary_cents: 9_800_000)
-
+  test "opens directly, saves two cross-border offers, and compares them" do
     get "/api/v1/offers", as: :json
     assert_response :success
-    assert_equal 2, response.parsed_body["offers"].length
 
-    post "/api/v1/comparisons", params: { offer_ids: [ first_id, second_id ] }, as: :json
+    canadian_id = create_offer(
+      company: "First Co", country_code: "CA", currency_code: "CAD", jurisdiction: "ON",
+      salary_cents: 10_000_000
+    )
+    american_id = create_offer(
+      company: "Second Co", country_code: "US", currency_code: "USD", jurisdiction: "WA",
+      salary_cents: 9_800_000
+    )
+
+    post "/api/v1/comparisons", params: {
+      offer_ids: [ canadian_id, american_id ], display_currency: "USD", usd_to_cad_rate: "1.4"
+    }, as: :json
+
     assert_response :success
     comparison = response.parsed_body["comparison"]
-    assert_equal "2026-H2", comparison["tax_data_version"]
+    assert_equal "USD", comparison["display_currency"]
+    assert_equal "1.4", comparison["usd_to_cad_rate"]
     assert_equal 2, comparison["offers"].length
-    assert_equal 4, comparison["offers"].first["years"].length
-
-    delete "/api/v1/logout", as: :json
-    assert_response :no_content
-    get "/api/v1/me", as: :json
-    assert_response :unauthorized
+    assert_equal 4, comparison["offers"].first["periods"].length
+    assert_equal "four_year_savings", comparison["comparison_basis"]
   end
 
-  test "cannot read another user's offer" do
-    owner = User.create!(name: "Owner", email: "owner@example.com", password: "password123")
-    offer = owner.offers.create!(company: "Private Co", role: "Engineer", city: "Ottawa", jurisdiction: "ON")
-    User.create!(name: "Viewer", email: "viewer@example.com", password: "password123")
+  test "supports local offer CRUD without a session" do
+    offer_id = create_offer(
+      company: "Local Co", country_code: "CA", currency_code: "CAD", jurisdiction: "AB",
+      salary_cents: 8_000_000
+    )
 
-    post "/api/v1/login", params: { email: "viewer@example.com", password: "password123" }, as: :json
-    get "/api/v1/offers/#{offer.id}", as: :json
+    patch "/api/v1/offers/#{offer_id}", params: { offer: { notes: "Updated locally" } }, as: :json
+    assert_response :success
+    assert_equal "Updated locally", response.parsed_body.dig("offer", "notes")
 
-    assert_response :not_found
+    delete "/api/v1/offers/#{offer_id}", as: :json
+    assert_response :no_content
+  end
+
+  test "rejects an invalid exchange rate" do
+    ids = [
+      create_offer(company: "One", country_code: "CA", currency_code: "CAD", jurisdiction: "ON", salary_cents: 1),
+      create_offer(company: "Two", country_code: "CA", currency_code: "CAD", jurisdiction: "QC", salary_cents: 1)
+    ]
+
+    post "/api/v1/comparisons", params: {
+      offer_ids: ids, display_currency: "CAD", usd_to_cad_rate: "0"
+    }, as: :json
+
+    assert_response :unprocessable_entity
+    assert_equal "invalid exchange rate", response.parsed_body["error"]
   end
 
   private
 
-  def create_offer(company:, jurisdiction:, salary_cents:)
+  def create_offer(company:, country_code:, currency_code:, jurisdiction:, salary_cents:)
+    city = country_code == "US" ? "Seattle" : "Toronto"
     post "/api/v1/offers", params: {
       offer: {
-        company: company, role: "Developer", city: "Toronto", jurisdiction: jurisdiction,
-        work_mode: "hybrid", salary_cents: salary_cents, equity_vesting_cents: [ 0, 0, 0, 0 ]
+        company: company, role: "Developer", city: city, country_code: country_code,
+        currency_code: currency_code, jurisdiction: jurisdiction, employment_type: "full_time",
+        pay_basis: "annual", work_mode: "hybrid", salary_cents: salary_cents,
+        equity_vesting_cents: [ 0, 0, 0, 0 ]
       }
     }, as: :json
     assert_response :created
