@@ -12,6 +12,7 @@ Rails.application.routes.draw do
       delete :logout, to: "sessions#destroy"
       get :me, to: "me#show"
       resources :offers
+      resources :comparisons, only: :create
 
       namespace :reference do
         resources :jurisdictions, only: :index
