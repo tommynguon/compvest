@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd "$(dirname "$0")/.." && pwd)"
+
+cleanup() {
+  jobs -p | xargs kill 2>/dev/null || true
+}
+trap cleanup EXIT INT TERM
+
+(cd "$project_dir/backend" && "$project_dir/bin/ruby" bin/rails server -p 3000) &
+(cd "$project_dir/frontend" && npm run dev) &
+
+wait
