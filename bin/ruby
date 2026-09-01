@@ -8,5 +8,6 @@ export MISE_CACHE_DIR="$project_dir/.tools/cache"
 export MISE_CONFIG_DIR="$project_dir/.tools/config"
 export MISE_STATE_DIR="$project_dir/.tools/state"
 export GEM_SPEC_CACHE="$project_dir/.tools/gem-cache"
+export XDG_CACHE_HOME="$project_dir/.tools/xdg-cache"
 
 exec mise exec ruby@3.3.6 -- "$@"
