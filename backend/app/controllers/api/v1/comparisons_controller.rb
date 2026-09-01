@@ -13,7 +13,9 @@ module Api
           comparison: Comparison::Builder.new(
             ordered_offers,
             display_currency: params[:display_currency],
-            usd_to_cad_rate: params[:usd_to_cad_rate]
+            usd_to_cad_rate: params[:usd_to_cad_rate],
+            exchange_rate_date: params[:exchange_rate_date],
+            exchange_rate_source: params[:exchange_rate_source]
           ).call
         }
       rescue ArgumentError => error

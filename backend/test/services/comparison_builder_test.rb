@@ -68,4 +68,18 @@ class ComparisonBuilderTest < ActiveSupport::TestCase
     assert_equal "1.4", comparison[:usd_to_cad_rate]
     assert_equal 3_360_000, comparison.dig(:offers, 1, :periods, 0, :gross_cash_cents)
   end
+
+  test "preserves the exchange rate provenance used by a comparison" do
+    comparison = Comparison::Builder.new(
+      [ @offer, @offer ],
+      display_currency: "CAD",
+      usd_to_cad_rate: "1.3762",
+      exchange_rate_date: "2026-08-31",
+      exchange_rate_source: "bank_of_canada"
+    ).call
+
+    assert_equal "2026-08-31", comparison[:exchange_rate_date]
+    assert_equal "bank_of_canada", comparison[:exchange_rate_source]
+    assert_equal ExchangeRates::BankOfCanada::SOURCE_URL, comparison[:exchange_rate_source_url]
+  end
 end

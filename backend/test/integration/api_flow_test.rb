@@ -15,13 +15,16 @@ class ApiFlowTest < ActionDispatch::IntegrationTest
     )
 
     post "/api/v1/comparisons", params: {
-      offer_ids: [ canadian_id, american_id ], display_currency: "USD", usd_to_cad_rate: "1.4"
+      offer_ids: [ canadian_id, american_id ], display_currency: "USD", usd_to_cad_rate: "1.4",
+      exchange_rate_date: "2026-08-31", exchange_rate_source: "bank_of_canada"
     }, as: :json
 
     assert_response :success
     comparison = response.parsed_body["comparison"]
     assert_equal "USD", comparison["display_currency"]
     assert_equal "1.4", comparison["usd_to_cad_rate"]
+    assert_equal "2026-08-31", comparison["exchange_rate_date"]
+    assert_equal "bank_of_canada", comparison["exchange_rate_source"]
     assert_equal 2, comparison["offers"].length
     assert_equal 4, comparison["offers"].first["periods"].length
     assert_equal "four_year_savings", comparison["comparison_basis"]
