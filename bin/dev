@@ -9,6 +9,6 @@ cleanup() {
 trap cleanup EXIT INT TERM
 
 (cd "$project_dir/backend" && "$project_dir/bin/ruby" bin/rails server -p 3000) &
-(cd "$project_dir/frontend" && npm run dev) &
+(cd "$project_dir/frontend" && npm run dev -- --host 127.0.0.1) &
 
 wait
