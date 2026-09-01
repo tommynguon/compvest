@@ -1,11 +1,21 @@
-export type User = { id: number; name: string; email: string }
+export type CountryCode = 'CA' | 'US'
+export type CurrencyCode = 'CAD' | 'USD'
+export type EmploymentType = 'full_time' | 'internship'
+export type PayBasis = 'annual' | 'hourly'
 
 export type Offer = {
   id: number
   company: string
   role: string
   city: string
+  country_code: CountryCode
+  currency_code: CurrencyCode
   jurisdiction: string
+  employment_type: EmploymentType
+  pay_basis: PayBasis
+  hourly_rate_cents: number
+  hours_per_week: string
+  term_weeks: number
   work_mode: 'remote' | 'hybrid' | 'onsite'
   notes: string | null
   salary_cents: number
@@ -16,6 +26,7 @@ export type Offer = {
   non_taxable_benefits_cents: number
   equity_vesting_cents: number[]
   monthly_rent_cents: number
+  monthly_other_living_costs_cents: number
   relocation_cost_cents: number
   commute_cost_per_office_day_cents: number
   office_days_per_week: string
@@ -25,37 +36,51 @@ export type Offer = {
   updated_at: string
 }
 
-export type ProjectionYear = {
-  year: number
+export type ProjectionPeriod = {
+  period_number: number
+  label: string
+  duration_weeks: number
   gross_cash_cents: number
   equity_cents: number
   taxable_income_cents: number
   income_tax_cents: number
   federal_tax_cents: number
-  provincial_tax_cents: number
+  regional_tax_cents: number
+  payroll_deductions_cents: number
   cpp_qpp_cents: number
   ei_qpip_cents: number
+  social_security_cents: number
+  medicare_cents: number
   spendable_after_deductions_cents: number
   rent_cents: number
   commute_cents: number
   relocation_cents: number
+  other_living_costs_cents: number
   location_costs_cents: number
-  disposable_cash_cents: number
+  estimated_savings_cents: number
   benefits_cents: number
   total_package_cents: number
 }
 
 export type OfferProjection = {
   offer: Offer
-  years: ProjectionYear[]
-  totals: Omit<ProjectionYear, 'year'>
+  native_currency: CurrencyCode
+  display_currency: CurrencyCode
+  periods: ProjectionPeriod[]
+  totals: Omit<ProjectionPeriod, 'period_number' | 'label' | 'duration_weeks'>
+  comparison_weeks: number
+  weekly_savings_cents: number
 }
 
 export type Comparison = {
   tax_data_version: string
+  display_currency: CurrencyCode
+  usd_to_cad_rate: string
+  exchange_rate_date: string
+  comparison_basis: 'weekly_savings' | 'four_year_savings'
   disclaimer: string
   source_urls: string[]
   offers: OfferProjection[]
   winner_offer_id: number
-  four_year_disposable_difference_cents: number
+  savings_difference_cents: number
 }

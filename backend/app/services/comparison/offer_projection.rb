@@ -124,7 +124,7 @@ module Comparison
     end
 
     def sum_periods(periods)
-      MONEY_KEYS.to_h { |key| [key, periods.sum { |period| period[key].to_i }] }
+      MONEY_KEYS.to_h { |key| [ key, periods.sum { |period| period[key].to_i } ] }
     end
 
     def divide_cents(cents, divisor)
@@ -136,7 +136,7 @@ module Comparison
     end
 
     def period_numbers
-      internship? ? [1] : (1..4)
+      internship? ? [ 1 ] : (1..4)
     end
 
     def internship?

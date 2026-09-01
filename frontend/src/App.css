@@ -18,6 +18,7 @@
 .brand { display: inline-flex; align-items: center; gap: 10px; color: var(--ink); font-size: 18px; font-weight: 750; letter-spacing: -0.4px; text-decoration: none; }
 .brand em { color: var(--orange); font-style: normal; font-weight: 650; }
 .brand-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 11px; color: #f7f6ee; background: var(--ink); }
+.personal-indicator { display: inline-flex; align-items: center; gap: 7px; color: var(--muted); font-size: 12px; font-weight: 700; }
 .account-menu { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: 14px; }
 .user-dot { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; color: var(--ink); background: var(--green-bright); font-weight: 800; }
 .icon-button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 50%; color: var(--muted); background: transparent; }
@@ -67,6 +68,8 @@ h1, h2, h3, p { margin-top: 0; }
 
 /* Dashboard */
 .dashboard-hero { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 68px; }
+.dashboard-hero.compact-hero { margin-bottom: 48px; }
+.dashboard-hero.compact-hero h1 { font-size: clamp(48px, 5vw, 68px); }
 .dashboard-hero h1, .page-heading h1, .compare-heading h1 { margin: 14px 0; font-family: var(--serif); color: var(--ink); font-size: clamp(48px, 6vw, 78px); font-weight: 500; line-height: .98; letter-spacing: -3.6px; }
 .dashboard-hero p, .page-heading p, .compare-heading p { max-width: 580px; color: var(--muted); font-size: 16px; line-height: 1.55; }
 .hero-stat { width: 150px; padding: 20px 22px; border-left: 1px solid var(--line); }
@@ -106,10 +109,18 @@ h1, h2, h3, p { margin-top: 0; }
 .empty-icon { display: grid; place-items: center; width: 64px; height: 64px; margin: 0 auto 22px; border-radius: 20px; color: var(--green); background: #e1e7dc; }
 .empty-state h2 { margin-bottom: 8px; font-family: var(--serif); font-size: 32px; }
 .empty-state p { max-width: 480px; margin: 0 auto 24px; color: var(--muted); }
-.compare-dock { position: fixed; z-index: 5; left: 50%; bottom: 22px; transform: translateX(-50%); width: min(700px, 90vw); display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: 14px 15px 14px 22px; border: 1px solid rgba(255,255,255,.13); border-radius: 17px; color: white; background: rgba(23,58,51,.95); box-shadow: 0 20px 50px rgba(23,58,51,.28); backdrop-filter: blur(14px); }
+.compare-dock { position: fixed; z-index: 5; left: 50%; bottom: 22px; transform: translateX(-50%); width: min(920px, 92vw); display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 14px 15px 14px 22px; border: 1px solid rgba(255,255,255,.13); border-radius: 17px; color: white; background: rgba(23,58,51,.97); box-shadow: 0 20px 50px rgba(23,58,51,.28); backdrop-filter: blur(14px); }
 .compare-dock span { display: block; color: #c7d5d1; font-size: 10px; font-weight: 750; letter-spacing: 1px; text-transform: uppercase; }
 .compare-dock strong { display: block; margin-top: 3px; font-size: 14px; }
 .compare-dock .primary-button { color: var(--ink); border-color: var(--green-bright); background: var(--green-bright); }
+.fx-settings, .compare-action { display: flex; align-items: center; gap: 16px; }
+.compare-action { margin-left: auto; }
+.fx-settings label { display: grid; gap: 4px; color: #c7d5d1; font-size: 9px; font-weight: 750; letter-spacing: .7px; text-transform: uppercase; }
+.fx-settings select, .fx-settings input { height: 32px; border: 1px solid rgba(255,255,255,.22); border-radius: 8px; color: white; background: rgba(255,255,255,.08); font: inherit; }
+.fx-settings select { width: 74px; padding: 0 8px; }
+.fx-settings input { width: 86px; padding: 0 8px; }
+.fx-settings small { color: #98afa8; font-size: 8px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.rate-input { display: flex !important; align-items: center; gap: 5px; color: #c7d5d1 !important; font-size: 10px !important; letter-spacing: 0 !important; text-transform: none !important; }
 
 /* Offer form */
 .editor-page { width: min(1000px, 90vw); }
@@ -174,6 +185,7 @@ h1, h2, h3, p { margin-top: 0; }
 .table-row strong { text-align: right; }
 .table-head { color: var(--muted); font-size: 10px; font-weight: 750; text-transform: uppercase; }
 .table-row.emphasis { color: var(--ink); background: #edf2cf; margin-inline: -12px; padding-inline: 12px; border: 0; }
+.payroll-context { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin: 15px 0 0 40%; color: var(--muted); font-size: 10px; text-align: right; }
 .method-note { display: flex; gap: 14px; margin-top: 20px; padding: 22px; border: 1px dashed #b9c1b8; border-radius: 15px; color: var(--muted); }
 .method-note h3 { margin: 0 0 5px; color: var(--ink); font-size: 13px; }
 .method-note p { margin: 0; font-size: 11px; line-height: 1.5; }
@@ -191,7 +203,7 @@ h1, h2, h3, p { margin-top: 0; }
 
 @media (max-width: 640px) {
   .topbar, .welcome-nav { height: 68px; padding-inline: 5vw; }
-  .built-label, .user-name { display: none; }
+  .built-label, .user-name, .personal-indicator span { display: none; }
   .page-wrap { width: 90vw; padding-top: 35px; }
   .welcome-copy h1 { font-size: 49px; letter-spacing: -2.7px; }
   .welcome-grid { width: 90vw; padding-top: 45px; }
@@ -209,7 +221,9 @@ h1, h2, h3, p { margin-top: 0; }
   .form-section { padding: 23px; }
   .sticky-actions > span { display: none; }
   .sticky-actions .primary-button { width: 100%; }
-  .compare-dock { align-items: stretch; flex-direction: column; }
+  .compare-dock { align-items: stretch; flex-direction: column; max-height: calc(100vh - 30px); overflow: auto; }
+  .fx-settings, .compare-action { width: 100%; justify-content: space-between; margin-left: 0; }
+  .compare-action { align-items: flex-end; }
   .compare-dock .primary-button { width: 100%; }
   .winner-banner { align-items: flex-start; }
   .winner-check { display: none; }
@@ -218,4 +232,5 @@ h1, h2, h3, p { margin-top: 0; }
   .projection-primary strong { font-size: 36px; }
   .chart-panel, .year-table-panel { padding: 22px 17px; }
   .table-row { grid-template-columns: 1.2fr 1fr 1fr; font-size: 11px; }
+  .payroll-context { margin-left: 0; }
 }
