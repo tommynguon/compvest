@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+project_dir="$(cd "$(dirname "$0")/.." && pwd)"
+
+cd "$project_dir/backend"
+"$project_dir/bin/ruby" bin/rails test
+"$project_dir/bin/ruby" bin/rubocop
+"$project_dir/bin/ruby" brakeman --no-pager -q
+"$project_dir/bin/ruby" bin/rails zeitwerk:check
+
+cd "$project_dir/frontend"
+npm test
+npm run lint
+npm run build
