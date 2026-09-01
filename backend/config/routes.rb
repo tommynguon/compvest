@@ -7,10 +7,6 @@ Rails.application.routes.draw do
 
   namespace :api do
     namespace :v1 do
-      post :register, to: "registrations#create"
-      post :login, to: "sessions#create"
-      delete :logout, to: "sessions#destroy"
-      get :me, to: "me#show"
       resources :offers
       resources :comparisons, only: :create
 

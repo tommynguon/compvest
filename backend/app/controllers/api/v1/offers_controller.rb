@@ -1,13 +1,12 @@
 module Api
   module V1
     class OffersController < ApplicationController
-      DEDUCTION_OVERRIDE_FIELDS = %i[income_tax_cents cpp_qpp_cents ei_qpip_cents].freeze
+      DEDUCTION_OVERRIDE_FIELDS = %i[income_tax_cents payroll_deductions_cents].freeze
 
-      before_action :require_authentication
       before_action :set_offer, only: [ :show, :update, :destroy ]
 
       def index
-        offers = Current.user.offers.order(updated_at: :desc)
+        offers = Offer.order(updated_at: :desc)
         render json: { offers: offers.map { |offer| OfferSerializer.render(offer) } }
       end
 
@@ -16,7 +15,7 @@ module Api
       end
 
       def create
-        offer = Current.user.offers.new(offer_params)
+        offer = Offer.new(offer_params)
 
         if offer.save
           render json: { offer: OfferSerializer.render(offer) }, status: :created
@@ -41,21 +40,26 @@ module Api
       private
 
       def set_offer
-        @offer = Current.user.offers.find(params[:id])
+        @offer = Offer.find(params[:id])
       end
 
       def offer_params
         attributes = params.require(:offer).permit(
-          :company, :city, :jurisdiction, :work_mode, :notes,
+          :company, :city, :country_code, :currency_code, :jurisdiction,
+          :employment_type, :pay_basis, :work_mode, :notes,
+          :hourly_rate_cents, :hours_per_week, :term_weeks,
           :salary_cents, :annual_bonus_cents, :signing_bonus_cents,
           :retirement_match_cents, :taxable_benefits_cents,
           :non_taxable_benefits_cents, :monthly_rent_cents,
+          :monthly_other_living_costs_cents,
           :relocation_cost_cents, :commute_cost_per_office_day_cents,
           :office_days_per_week, :working_weeks_per_year,
           equity_vesting_cents: []
         )
-        attributes[:role] = params.dig(:offer, :role).to_s
-        attributes[:deduction_overrides_cents] = sanitized_deduction_overrides
+        attributes[:role] = params.dig(:offer, :role).to_s if params[:offer].key?(:role)
+        if params[:offer].key?(:deduction_overrides_cents)
+          attributes[:deduction_overrides_cents] = sanitized_deduction_overrides
+        end
         attributes
       end
 
