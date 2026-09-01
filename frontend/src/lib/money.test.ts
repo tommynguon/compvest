@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { centsToDollars, dollarsToCents, formatCad } from './money'
+import { centsToDollars, dollarsToCents, formatMoney } from './money'
 
 describe('money helpers', () => {
   it('converts dollars and cents without floating point leakage', () => {
@@ -7,7 +7,8 @@ describe('money helpers', () => {
     expect(centsToDollars(123456)).toBe(1234.56)
   })
 
-  it('formats Canadian dollars for decision cards', () => {
-    expect(formatCad(10_500_000)).toContain('105,000')
+  it('formats CAD and USD for decision cards', () => {
+    expect(formatMoney(10_500_000, 'CAD')).toContain('105,000')
+    expect(formatMoney(10_500_000, 'USD')).toContain('US')
   })
 })
